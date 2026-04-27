@@ -27,13 +27,12 @@ jobs:
           CXX: x86_64-w64-mingw32-g++
         run: |
           cd ffrida/subprojects/frida-core
-          # Disable frida-compiler-backend: a typescript-go submodule that
-          # statically links a full Go runtime into libfrida-core.a, which
-          # collides with consumer Go binaries' runtime
-          # (panic: name offset base pointer out of range at iface.itabInit).
-          # We use plain JS agents — no need for it. The configure script
-          # accepts trailing positional args verbatim as meson setup options.
-          ./configure --host=x86_64-w64-mingw32 --without-prebuilds=sdk:host --with-devkits=core -Dcompiler_backend=disabled
+          # --disable-compiler-backend: drops the typescript-go submodule that
+          # statically links a full Go runtime into libfrida-core.a (which
+          # collides with consumer Go binaries' runtime — panic at
+          # iface.itabInit / runtime.resolveNameOff). We don't compile TS
+          # agents; plain JS works.
+          ./configure --host=x86_64-w64-mingw32 --without-prebuilds=sdk:host --with-devkits=core --disable-compiler-backend
           make
           mkdir /tmp/frida-core-devkit
           cp ./build/src/devkit/* /tmp/frida-core-devkit/
