@@ -29,10 +29,12 @@ jobs:
           cd ffrida/subprojects/frida-core
           ./configure --host=x86_64-w64-mingw32 --without-prebuilds=sdk:host --with-devkits=core
           # Disable frida-compiler-backend: it's a typescript-go submodule that
-          # statically links a full Go runtime into libfrida-core.a, which
-          # collides with the Go runtime of any consumer Go binary
-          # (panic: name offset base pointer out of range at iface.itabInit).
-          # We use plain JS agents, so we don't need ESBuild/TS compilation.
+          # statically links a full Go runtime into libfrida-core.a, colliding
+          # with consumer Go binaries (panic: name offset base pointer out of
+          # range at iface.itabInit). We use plain JS agents — no need for it.
+          # Use the meson bundled inside frida's toolchain (system PATH may
+          # not have it; ./configure pulled it down to deps/).
+          export PATH="$(pwd)/deps/toolchain-linux-x86_64/bin:$PATH"
           meson configure build -Dcompiler_backend=disabled
           make
           mkdir /tmp/frida-core-devkit
