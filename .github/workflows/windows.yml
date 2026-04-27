@@ -16,12 +16,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install necessary packages
-        run: |
-          sudo apt update && sudo apt install -y golang nodejs npm git g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
-          # Install meson + ninja so we can post-edit the build dir's options
-          # (the bundled toolchain that frida's ./configure pulls down doesn't
-          #  actually expose `meson` as a binary on PATH, just `ninja`).
-          pip3 install meson==1.4.0
+        run: sudo apt update && sudo apt install -y golang nodejs npm git g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
       - name: Download frida
         run: |
           git clone --branch 17.5.2 https://github.com/frida/frida.git ffrida && cd ffrida/
@@ -32,16 +27,13 @@ jobs:
           CXX: x86_64-w64-mingw32-g++
         run: |
           cd ffrida/subprojects/frida-core
-          ./configure --host=x86_64-w64-mingw32 --without-prebuilds=sdk:host --with-devkits=core
           # Disable frida-compiler-backend: a typescript-go submodule that
           # statically links a full Go runtime into libfrida-core.a, which
           # collides with consumer Go binaries' runtime
           # (panic: name offset base pointer out of range at iface.itabInit).
-          # We use plain JS agents — no need for it.
-          meson configure build -Dcompiler_backend=disabled
-          # Add the bundled ninja to PATH so make finds it (avoid system ninja
-          # version-skew).
-          export PATH="$(pwd)/deps/toolchain-linux-x86_64/bin:$PATH"
+          # We use plain JS agents — no need for it. The configure script
+          # accepts trailing positional args verbatim as meson setup options.
+          ./configure --host=x86_64-w64-mingw32 --without-prebuilds=sdk:host --with-devkits=core -Dcompiler_backend=disabled
           make
           mkdir /tmp/frida-core-devkit
           cp ./build/src/devkit/* /tmp/frida-core-devkit/
